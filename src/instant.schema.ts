@@ -4,39 +4,82 @@ import { i } from "@instantdb/react";
 
 const _schema = i.schema({
   entities: {
-    $files: i.entity({
-      path: i.string().unique().indexed(),
-      url: i.string(),
-    }),
     $users: i.entity({
       email: i.string().unique().indexed().optional(),
       imageURL: i.string().optional(),
       type: i.string().optional(),
     }),
-    todos: i.entity({
-      text: i.string(),
-      done: i.boolean(),
-      createdAt: i.number(),
+    people: i.entity({
+      name: i.string().indexed(),
+      birthday: i.string().optional().indexed(),
+      lastContactDate: i.number().indexed(),
+      memo: i.string().optional(),
+      createdAt: i.number().indexed(),
+    }),
+    categories: i.entity({
+      name: i.string().indexed(),
+      order: i.number().indexed(),
+      isDefault: i.boolean(),
+    }),
+    settings: i.entity({
+      weeklyReminderEnabled: i.boolean(),
+      weeklyReminderDay: i.number(),
+      weeklyReminderTime: i.string(),
+      birthdayReminderEnabled: i.boolean(),
+      birthdayReminderDays: i.number(),
     }),
   },
   links: {
-    $usersLinkedPrimaryUser: {
+    userPeople: {
       forward: {
-        on: "$users",
+        on: "people",
         has: "one",
-        label: "linkedPrimaryUser",
+        label: "owner",
         onDelete: "cascade",
       },
       reverse: {
         on: "$users",
         has: "many",
-        label: "linkedGuestUsers",
+        label: "people",
       },
     },
-  },
-  rooms: {
-    todos: {
-      presence: i.entity({}),
+    userCategories: {
+      forward: {
+        on: "categories",
+        has: "one",
+        label: "owner",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "many",
+        label: "categories",
+      },
+    },
+    userSettings: {
+      forward: {
+        on: "settings",
+        has: "one",
+        label: "owner",
+        onDelete: "cascade",
+      },
+      reverse: {
+        on: "$users",
+        has: "one",
+        label: "settings",
+      },
+    },
+    peopleCategories: {
+      forward: {
+        on: "people",
+        has: "many",
+        label: "categories",
+      },
+      reverse: {
+        on: "categories",
+        has: "many",
+        label: "people",
+      },
     },
   },
 });

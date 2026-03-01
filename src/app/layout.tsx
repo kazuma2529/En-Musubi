@@ -13,8 +13,20 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Create Instant App',
-  description: 'Instant DB Starter App',
+  title: "縁結び - 大切な人との縁を管理",
+  description: "友人・知人・家族との連絡を忘れない、パーソナルCRMアプリ",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icons/icon192.png",
+    apple: "/icons/icon192.png",
+  },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  themeColor: "#FF9A8B",
 };
 
 export default function RootLayout({
@@ -23,7 +35,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
