@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { db } from "@/lib/db";
 import { id } from "@instantdb/react";
 
@@ -11,16 +11,18 @@ const DEFAULT_CATEGORIES = [
   { name: "オンライン", order: 3 },
 ];
 
+// グローバルな初期化フラグ（ユーザーごと）
+const initializedUsers = new Set<string>();
+
 export function useDefaultCategories(
   userId: string | undefined,
   categories: { id: string }[]
 ) {
-  const initialized = useRef(false);
-
   useEffect(() => {
-    if (!userId || categories.length > 0 || initialized.current) return;
+    if (!userId || categories.length > 0 || initializedUsers.has(userId)) return;
 
-    initialized.current = true;
+    // このユーザーは初期化済みとマーク
+    initializedUsers.add(userId);
 
     const txs = DEFAULT_CATEGORIES.map((def, i) => {
       const catId = id();

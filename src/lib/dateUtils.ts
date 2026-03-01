@@ -59,7 +59,7 @@ export function daysUntilBirthday(
 export function formatBirthday(birthdayStr: string | null | undefined): string {
   if (!birthdayStr) return "";
   if (birthdayStr.startsWith("--")) {
-    return `${birthdayStr.slice(2, 4)}/${birthdayStr.slice(4, 6)}`;
+    return `${birthdayStr.slice(2, 4)}/${birthdayStr.slice(5)}`;
   }
   const [y, m, d] = birthdayStr.split("-");
   return `${y}/${m}/${d}`;

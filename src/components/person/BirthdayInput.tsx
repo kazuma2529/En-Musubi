@@ -50,7 +50,7 @@ export function BirthdayInput({
             if (v.length >= 4) {
               onChange(`--${v.slice(0, 2)}-${v.slice(2, 4)}`);
             } else if (v.length >= 2) {
-              onChange(`--${v.slice(0, 2)}-`);
+              onChange(`--${v.slice(0, 2)}-${v.slice(2)}`);
             } else if (v.length >= 1) {
               onChange(`--${v}`);
             } else {
