@@ -33,6 +33,14 @@ export default function PersonDetailPage() {
 
   const person = (data?.people?.[0] ?? null) as PersonWithCategories | null;
 
+  // カテゴリの重複を除去
+  if (person?.categories) {
+    const uniqueCategories = Array.from(
+      new Map(person.categories.map((cat) => [cat.id, cat])).values()
+    );
+    person.categories = uniqueCategories;
+  }
+
   const handleDelete = () => {
     if (!person || !confirm("この人を削除しますか？")) return;
     db.transact(db.tx.people[person.id].delete());

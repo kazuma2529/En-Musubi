@@ -20,7 +20,11 @@ export default function NewPersonPage() {
       : { categories: { $: { where: { "owner.id": "00000000-0000-0000-0000-000000000000" } } } }
   );
 
-  const categories = (data?.categories ?? []) as Category[];
+  // 重複を除去
+  const uniqueCategories = Array.from(
+    new Map((data?.categories ?? []).map((cat: Category) => [cat.id, cat])).values()
+  ) as Category[];
+  const categories = uniqueCategories;
 
   if (isLoading) {
     return (

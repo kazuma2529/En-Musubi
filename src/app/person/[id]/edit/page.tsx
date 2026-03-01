@@ -26,7 +26,12 @@ export default function EditPersonPage() {
   });
 
   const person = (data?.people?.[0] ?? null) as PersonWithCategories | null;
-  const categories = (data?.categories ?? []) as Category[];
+  
+  // 重複を除去
+  const uniqueCategories = Array.from(
+    new Map((data?.categories ?? []).map((cat: Category) => [cat.id, cat])).values()
+  ) as Category[];
+  const categories = uniqueCategories;
 
   if (isLoading) {
     return (

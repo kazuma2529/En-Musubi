@@ -65,7 +65,11 @@ export default function SettingsPage() {
         }
   );
 
-  const categories = (data?.categories ?? []) as Category[];
+  // カテゴリの重複を除去
+  const uniqueCategories = Array.from(
+    new Map((data?.categories ?? []).map((cat: Category) => [cat.id, cat])).values()
+  ) as Category[];
+  const categories = uniqueCategories;
   const settings = data?.settings?.[0];
 
   const addCategory = () => {

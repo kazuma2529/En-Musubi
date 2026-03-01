@@ -49,7 +49,12 @@ export default function HomePage() {
   const { data, error } = db.useQuery(query);
 
   const people = (data?.people ?? []) as PersonWithCategories[];
-  const categories = data?.categories ?? [];
+  
+  // カテゴリの重複を除去
+  const uniqueCategories = Array.from(
+    new Map((data?.categories ?? []).map((cat: any) => [cat.id, cat])).values()
+  );
+  const categories = uniqueCategories;
 
   useDefaultCategories(user?.id, categories);
 

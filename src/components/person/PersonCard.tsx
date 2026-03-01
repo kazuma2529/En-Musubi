@@ -11,7 +11,10 @@ interface PersonCardProps {
 }
 
 export function PersonCard({ person }: PersonCardProps) {
-  const categories = person.categories ?? [];
+  // カテゴリの重複を除去
+  const categories = Array.from(
+    new Map((person.categories ?? []).map((cat) => [cat.id, cat])).values()
+  );
   const lastContact = person.lastContactDate
     ? formatLastContact(person.lastContactDate)
     : null;
