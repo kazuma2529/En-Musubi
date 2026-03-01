@@ -1,15 +1,17 @@
 "use client";
 
-import { useMemo, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Header } from "@/components/layout/Header";
 import { Card } from "@/components/ui/Card";
 import { ContactButton } from "@/components/person/ContactButton";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingScreen } from "@/components/layout/LoadingScreen";
+import { UnauthorizedMessage } from "@/components/layout/UnauthorizedMessage";
 import {
   isOver90DaysAgo,
   daysSinceContact,
@@ -19,34 +21,15 @@ import {
 import type { PersonWithCategories } from "@/lib/types";
 
 export default function AlertsPage() {
-  const router = useRouter();
-  const { isLoading, user } = useAuth();
+  const { isLoading, user } = useRequireAuth();
+  const ownerId = useOwnerId();
 
-  useEffect(() => {
-    if (
-      !isLoading &&
-      !user &&
-      process.env.NEXT_PUBLIC_MOCK_AUTH !== "true"
-    ) {
-      router.replace("/login");
-    }
-  }, [isLoading, user, router]);
-
-  const { data } = db.useQuery(
-    user
-      ? {
-          people: {
-            $: { where: { "owner.id": user.id } },
-            categories: {},
-          },
-        }
-      : {
-          people: {
-            $: { where: { "owner.id": "00000000-0000-0000-0000-000000000000" } },
-            categories: {},
-          },
-        }
-  );
+  const { data } = db.useQuery({
+    people: {
+      $: { where: { "owner.id": ownerId } },
+      categories: {},
+    },
+  });
 
   const people = (data?.people ?? []) as PersonWithCategories[];
 
@@ -64,29 +47,8 @@ export default function AlertsPage() {
 
   const alertCount = noContactList.length + birthdayList.length;
 
-  if (isLoading) {
-    return (
-      <PageLayout showBottomNav={false}>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse text-[var(--text-secondary)]">
-            読み込み中...
-          </div>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <PageLayout showBottomNav={false}>
-        <div className="min-h-screen flex items-center justify-center p-6">
-          <p className="text-[var(--text-secondary)]">
-            ログインが必要です
-          </p>
-        </div>
-      </PageLayout>
-    );
-  }
+  if (isLoading) return <LoadingScreen />;
+  if (!user) return <UnauthorizedMessage />;
 
   return (
     <PageLayout alertCount={alertCount}>

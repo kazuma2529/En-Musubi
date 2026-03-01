@@ -4,16 +4,16 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { ContactButton } from "./ContactButton";
 import { formatLastContact } from "@/lib/dateUtils";
-import type { PersonWithCategories } from "@/lib/types";
+import { dedupeCategoriesById } from "@/lib/categories";
+import type { PersonWithCategories, Category } from "@/lib/types";
 
 interface PersonCardProps {
   person: PersonWithCategories;
 }
 
 export function PersonCard({ person }: PersonCardProps) {
-  // カテゴリの重複を除去
-  const categories = Array.from(
-    new Map((person.categories ?? []).map((cat) => [cat.id, cat])).values()
+  const categories = dedupeCategoriesById(
+    (person.categories ?? []) as Category[]
   );
   const lastContact = person.lastContactDate
     ? formatLastContact(person.lastContactDate)

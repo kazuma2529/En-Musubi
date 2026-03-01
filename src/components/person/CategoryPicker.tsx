@@ -1,5 +1,6 @@
 "use client";
 
+import { sortCategoriesByOrder } from "@/lib/categories";
 import type { Category } from "@/lib/types";
 
 interface CategoryPickerProps {
@@ -23,7 +24,7 @@ export function CategoryPicker({
     }
   };
 
-  const sorted = [...categories].sort((a, b) => a.order - b.order);
+  const sorted = sortCategoriesByOrder(categories);
 
   return (
     <div>

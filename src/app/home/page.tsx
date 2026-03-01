@@ -1,10 +1,10 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { db } from "@/lib/db";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import { useDefaultCategories } from "@/hooks/useDefaultCategories";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Header } from "@/components/layout/Header";
@@ -12,49 +12,34 @@ import { PersonCard } from "@/components/person/PersonCard";
 import { SortMenu, type SortOption } from "@/components/person/SortMenu";
 import { Input } from "@/components/ui/Input";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { LoadingScreen } from "@/components/layout/LoadingScreen";
+import { UnauthorizedMessage } from "@/components/layout/UnauthorizedMessage";
 import { formatLastContact, isOver90DaysAgo, daysUntilBirthday } from "@/lib/dateUtils";
-import type { PersonWithCategories } from "@/lib/types";
+import { dedupeCategoriesById, sortCategoriesByOrder } from "@/lib/categories";
+import type { PersonWithCategories, Category } from "@/lib/types";
 
 export default function HomePage() {
-  const router = useRouter();
-  const { isLoading, user } = useAuth();
-
-  useEffect(() => {
-    if (
-      !isLoading &&
-      !user &&
-      process.env.NEXT_PUBLIC_MOCK_AUTH !== "true"
-    ) {
-      router.replace("/login");
-    }
-  }, [isLoading, user, router]);
+  const { isLoading, user } = useRequireAuth();
+  const ownerId = useOwnerId();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [sort, setSort] = useState<SortOption>("lastContact_asc");
 
   const query = {
     people: {
-      $: {
-        where: user ? { "owner.id": user.id } : { "owner.id": "00000000-0000-0000-0000-000000000000" },
-      },
+      $: { where: { "owner.id": ownerId } },
       categories: {},
     },
     categories: {
-      $: {
-        where: user ? { "owner.id": user.id } : { "owner.id": "00000000-0000-0000-0000-000000000000" },
-      },
+      $: { where: { "owner.id": ownerId } },
     },
   };
 
   const { data, error } = db.useQuery(query);
 
   const people = (data?.people ?? []) as PersonWithCategories[];
-  
-  // カテゴリの重複を除去
-  const uniqueCategories = Array.from(
-    new Map((data?.categories ?? []).map((cat: any) => [cat.id, cat])).values()
-  );
-  const categories = uniqueCategories;
+  const rawCategories = (data?.categories ?? []) as Category[];
+  const categories = sortCategoriesByOrder(dedupeCategoriesById(rawCategories));
 
   useDefaultCategories(user?.id, categories);
 
@@ -106,33 +91,8 @@ export default function HomePage() {
     return count;
   }, [people]);
 
-  if (isLoading) {
-    return (
-      <PageLayout showBottomNav={false}>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse text-[var(--text-secondary)]">
-            読み込み中...
-          </div>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (!user) {
-    return (
-      <PageLayout showBottomNav={false}>
-        <div className="min-h-screen flex items-center justify-center p-6">
-          <p className="text-[var(--text-secondary)]">
-            ログインが必要です
-          </p>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  const sortedCategories = [...categories].sort(
-    (a, b) => (a.order ?? 0) - (b.order ?? 0)
-  );
+  if (isLoading) return <LoadingScreen />;
+  if (!user) return <UnauthorizedMessage />;
 
   return (
     <PageLayout alertCount={alertCount}>
@@ -158,7 +118,7 @@ export default function HomePage() {
           />
 
           <div className="flex flex-wrap gap-2">
-            {sortedCategories.map((cat) => {
+            {categories.map((cat) => {
               const active = categoryFilter.includes(cat.id);
               return (
                 <button

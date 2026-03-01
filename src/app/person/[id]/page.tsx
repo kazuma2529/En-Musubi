@@ -3,27 +3,30 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { db } from "@/lib/db";
-import { useAuth } from "@/hooks/useAuth";
+import { useRequireAuth } from "@/hooks/useRequireAuth";
+import { useOwnerId } from "@/hooks/useOwnerId";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { ContactButton } from "@/components/person/ContactButton";
+import { LoadingScreen } from "@/components/layout/LoadingScreen";
 import {
   formatLastContact,
   formatBirthday,
   daysUntilBirthday,
 } from "@/lib/dateUtils";
-import type { PersonWithCategories } from "@/lib/types";
+import { dedupeCategoriesById } from "@/lib/categories";
+import type { PersonWithCategories, Category } from "@/lib/types";
 
 export default function PersonDetailPage() {
   const params = useParams();
   const router = useRouter();
   const personId = params.id as string;
-  const { isLoading, user } = useAuth();
+  const { isLoading, user } = useRequireAuth();
+  const ownerId = useOwnerId();
 
-  const ownerId = user?.id ?? "00000000-0000-0000-0000-000000000000";
   const { data } = db.useQuery({
     people: {
       $: { where: { id: personId, "owner.id": ownerId } },
@@ -32,14 +35,9 @@ export default function PersonDetailPage() {
   });
 
   const person = (data?.people?.[0] ?? null) as PersonWithCategories | null;
-
-  // カテゴリの重複を除去
-  if (person?.categories) {
-    const uniqueCategories = Array.from(
-      new Map(person.categories.map((cat) => [cat.id, cat])).values()
-    );
-    person.categories = uniqueCategories;
-  }
+  const categories = person
+    ? dedupeCategoriesById((person.categories ?? []) as Category[])
+    : [];
 
   const handleDelete = () => {
     if (!person || !confirm("この人を削除しますか？")) return;
@@ -47,22 +45,8 @@ export default function PersonDetailPage() {
     router.push("/home");
   };
 
-  if (isLoading) {
-    return (
-      <PageLayout showBottomNav={false}>
-        <div className="min-h-screen flex items-center justify-center">
-          <div className="animate-pulse text-[var(--text-secondary)]">
-            読み込み中...
-          </div>
-        </div>
-      </PageLayout>
-    );
-  }
-
-  if (!user) {
-    router.replace("/login");
-    return null;
-  }
+  if (isLoading) return <LoadingScreen />;
+  if (!user) return null;
 
   if (!person) {
     return (
@@ -78,7 +62,6 @@ export default function PersonDetailPage() {
     );
   }
 
-  const categories = person.categories ?? [];
   const birthdayDays = daysUntilBirthday(person.birthday, 14);
 
   return (
